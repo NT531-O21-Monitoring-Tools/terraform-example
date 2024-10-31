@@ -25,6 +25,11 @@ variable "aws_owner" {
   type        = string
 }
 
+variable "aws_key_name" {
+  description = "AWS key name"
+  type        = string
+}
+
 variable "aws_vpc_config" {
   description = "VPC configuration"
   type = object({
