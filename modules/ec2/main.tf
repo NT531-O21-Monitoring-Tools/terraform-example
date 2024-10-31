@@ -31,8 +31,35 @@ resource "aws_instance" "public_instances" {
   subnet_id              = var.public_subnets_id[count.index % length(var.public_subnets_id)]
   vpc_security_group_ids = var.public_sgs_id
   key_name               = var.key_name
+  user_data = file("../../add-pub-ssh-key.sh")
   tags = {
     Name = "${var.name}-public-instance-${count.index}"
+  }
+}
+
+resource "null_resource" "public_instance_provisioner" {
+  depends_on = [
+    aws_instance.public_instances
+  ]
+  triggers = {
+    "always_run" = timestamp()
+  }
+  connection {
+    type        = "ssh"
+    user        = "ubuntu"
+    host        = aws_instance.public_instances[0].public_ip
+    private_key = file("${path.root}/${var.key_name}.pem")
+    agent = false
+  }
+  provisioner "file" {
+    source      = "../../init-script.sh"
+    destination = "/home/ubuntu/init-script.sh"
+  }
+  provisioner "remote-exec" {
+    inline = [
+      "chmod +x /home/ubuntu/init-script.sh",
+      "sudo /home/ubuntu/init-script.sh"
+    ]
   }
 }
 
@@ -45,6 +72,7 @@ resource "aws_instance" "private_instances" {
   subnet_id              = var.private_subnets_id[count.index % length(var.private_subnets_id)]
   vpc_security_group_ids = var.private_sgs_id
   key_name               = var.key_name
+  user_data = file("../../add-pub-ssh-key.sh")
   tags = {
     Name = "${var.name}-private-instance-${count.index}"
   }
