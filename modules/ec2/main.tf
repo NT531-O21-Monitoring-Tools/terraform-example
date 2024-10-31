@@ -21,7 +21,6 @@ data "aws_ami" "ubuntu" {
 locals {
   ec2_ami = var.ami != "" ? var.ami : data.aws_ami.ubuntu.id
 }
-
 # Public EC2 Instance
 resource "aws_instance" "public_instances" {
   count         = var.public_instance_count
@@ -31,7 +30,7 @@ resource "aws_instance" "public_instances" {
   subnet_id              = var.public_subnets_id[count.index % length(var.public_subnets_id)]
   vpc_security_group_ids = var.public_sgs_id
   key_name               = var.key_name
-  user_data = file("../../add-pub-ssh-key.sh")
+  user_data = file("../../scripts/add-pub-ssh-key.sh")
   tags = {
     Name = "${var.name}-public-instance-${count.index}"
   }
@@ -52,7 +51,7 @@ resource "null_resource" "public_instance_provisioner" {
     agent = false
   }
   provisioner "file" {
-    source      = "../../init-script.sh"
+    source      = "../../scripts/init-script.sh"
     destination = "/home/ubuntu/init-script.sh"
   }
   provisioner "remote-exec" {
@@ -72,7 +71,6 @@ resource "aws_instance" "private_instances" {
   subnet_id              = var.private_subnets_id[count.index % length(var.private_subnets_id)]
   vpc_security_group_ids = var.private_sgs_id
   key_name               = var.key_name
-  user_data = file("../../add-pub-ssh-key.sh")
   tags = {
     Name = "${var.name}-private-instance-${count.index}"
   }
